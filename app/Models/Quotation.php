@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Models\AuditLog;
 
 class Quotation extends Model
 {
@@ -39,5 +40,32 @@ class Quotation extends Model
     return $this->hasOne(Policy::class);
 }
 
+public function accept()
+{
+    // Change the status to accepted
+    $this->update(['acceptance_status' => 'accepted']);
+    
+    // Log the action in the audit trail
+    // \App\Models\AuditLog::create([
+    //     'action' => 'accepted',
+    //     'actor' => auth()->user()->name,
+    //     'description' => "Quotation {$this->quotation_number} accepted",
+    //     'quotation_id' => $this->id,
+    // ]);
+}
+
+public function reject()
+{
+    // Change the status to rejected
+    $this->update(['acceptance_status' => 'rejected']);
+    
+    // Log the action in the audit trail
+    // AuditLog::create([
+    //     'action' => 'rejected',
+    //     'model_type' => 'Quotation',
+    //     'model_id' => $this->id,
+    //     'user_name' => auth()->user()->name, // Log the user's name
+    // ]);
+}
 }
 

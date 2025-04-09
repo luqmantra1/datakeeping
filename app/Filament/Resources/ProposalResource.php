@@ -3,23 +3,20 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProposalResource\Pages;
-use App\Filament\Resources\ProposalResource\RelationManagers;
 use App\Models\Proposal;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-
 
 class ProposalResource extends Resource
 {
     protected static ?string $model = Proposal::class;
-    protected static ?string $navigationGroup = 'Sepakat Insurance Workflow';
+    protected static ?string $navigationGroup = 'Internal';
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
+    // Define the form schema for proposal creation and editing
     public static function form(Form $form): Form
     {
         return $form
@@ -52,6 +49,7 @@ class ProposalResource extends Resource
             ]);
     }
 
+    // Define the table schema for displaying proposals
     public static function table(Table $table): Table
     {
         return $table
@@ -68,7 +66,7 @@ class ProposalResource extends Resource
                     ]),
                 Tables\Columns\TextColumn::make('created_at')->since(),
             ])
-            ->filters([])
+            ->filters([]) // Add any necessary filters here
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -78,6 +76,7 @@ class ProposalResource extends Resource
             ]);
     }
 
+    // Define pages for the resource
     public static function getPages(): array
     {
         return [
@@ -87,4 +86,3 @@ class ProposalResource extends Resource
         ];
     }
 }
-

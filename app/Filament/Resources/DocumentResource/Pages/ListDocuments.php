@@ -3,25 +3,25 @@
 namespace App\Filament\Resources\DocumentResource\Pages;
 
 use App\Filament\Resources\DocumentResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Actions;
 
 class ListDocuments extends ListRecords
 {
     protected static string $resource = DocumentResource::class;
 
-    public static function canAccess(array $parameters = []): bool
+    // This method checks if the user can create a document (based on their role)
+    protected function canCreate(): bool
     {
-        // Allow all roles (Admin, CEO, Manager, Team Member) to access the documents page
-        return auth()->user()?->hasAnyRole(['Admin', 'CEO', 'Manager', 'Team Member']);
+        // Only Admin and CEO can create documents
+        return auth()->user()?->hasAnyRole(['Admin', 'CEO']);
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            // Only show 'Create Document' button if the user can create documents
+            Actions\CreateAction::make()->visible(fn () => $this->canCreate()),
         ];
     }
 }
-
-

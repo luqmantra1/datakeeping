@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('file_path');
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
-            $table->foreignId('uploaded_by')->constrained('users')->onDelete('cascade'); // Cascade delete on user delete
-            $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null'); // Set to null if user is deleted
             $table->boolean('encrypted')->default(false);
+            $table->string('status')->default('pending');
+            $table->unsignedBigInteger('uploaded_by');  // Ensure this is set to the user's ID
             $table->timestamps();
+    
+            $table->foreign('uploaded_by')->references('id')->on('users')->onDelete('cascade'); 
         });
     }
 

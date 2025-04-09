@@ -3,52 +3,83 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ClientResource\Pages;
-use App\Filament\Resources\ClientResource\RelationManagers;
 use App\Models\Client;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\DeleteBulkAction;
 
 class ClientResource extends Resource
 {
     protected static ?string $model = Client::class;
-    protected static ?string $navigationGroup = 'Sepakat Insurance Workflow';
+    protected static ?string $navigationGroup = 'Internal';
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
 
+    // Form definition for creating or editing clients
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('company_name')->required()->maxLength(255),
-                Forms\Components\TextInput::make('contact_person')->required()->maxLength(255),
-                Forms\Components\TextInput::make('email')->email()->required()->maxLength(255),
-                Forms\Components\TextInput::make('phone')->tel()->maxLength(20),
-                Forms\Components\Textarea::make('address')->rows(3),
+                Forms\Components\TextInput::make('company_name')
+                    ->label('Company Name')
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\TextInput::make('contact_person')
+                    ->label('Contact Person')
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\TextInput::make('email')
+                    ->label('Email Address')
+                    ->email()
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\TextInput::make('phone')
+                    ->label('Phone Number')
+                    ->tel()
+                    ->maxLength(20),
+
+                Forms\Components\Textarea::make('address')
+                    ->label('Address')
+                    ->rows(3),
             ]);
     }
 
+    // Table definition for displaying clients
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('company_name')->searchable(),
-                Tables\Columns\TextColumn::make('contact_person')->searchable(),
-                Tables\Columns\TextColumn::make('email'),
-                Tables\Columns\TextColumn::make('phone'),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->label('Registered At'),
+                Tables\Columns\TextColumn::make('company_name')
+                    ->label('Company Name')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('contact_person')
+                    ->label('Contact Person')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('email')
+                    ->label('Email Address'),
+
+                Tables\Columns\TextColumn::make('phone')
+                    ->label('Phone Number'),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Registered At')
+                    ->dateTime(),
             ])
-            ->filters([])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                DeleteBulkAction::make(),
             ]);
     }
 
@@ -61,4 +92,3 @@ class ClientResource extends Resource
         ];
     }
 }
-

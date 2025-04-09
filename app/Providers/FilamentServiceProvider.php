@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 
 class FilamentServiceProvider extends ServiceProvider
 {
+    
     /**
      * Register services.
      */
@@ -21,4 +22,6 @@ class FilamentServiceProvider extends ServiceProvider
     {
         //
     }
+
+    
 }

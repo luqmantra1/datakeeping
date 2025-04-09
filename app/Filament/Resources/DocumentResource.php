@@ -9,19 +9,19 @@ use Filament\Resources\Resource;
 use Filament\Tables\Table;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Actions;
 use Illuminate\Support\Facades\Auth;
-use Filament\Notifications\Notification;
 
 class DocumentResource extends Resource
 {
     protected static ?string $model = Document::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'System';
+    protected static ?string $navigationIcon = 'heroicon-o-document';
 
+    // Define the form schema for document creation and editing
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -35,61 +35,64 @@ class DocumentResource extends Resource
                 ->label('Upload Document')
                 ->directory('documents')
                 ->preserveFilenames()
-                ->required()
-                ->helperText('Upload the document you want to store.'),
-
-            Toggle::make('encrypted')
-                ->label('Encrypt this file?')
-                ->helperText('Toggle this if you want to encrypt the document.'),
+                ->required(),
         ]);
     }
 
+    // Define the table schema for displaying documents
     public static function table(Table $table): Table
     {
         return $table
-        ->columns([
-            TextColumn::make('title')
-                ->label('Document Title')
-                ->searchable()
-                ->sortable(),
+            ->columns([
+                TextColumn::make('title')
+                    ->label('Document Title')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('status')
-                ->label('Status')
-                ->sortable()
-                ->getStateUsing(fn ($record) => ucfirst($record->status)),
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        'pending' => 'warning',
+                    })
+                    ->sortable(),
 
-            // Add column to display encryption status
-            TextColumn::make('encrypted')
-                ->label('Encrypted')
-                ->getStateUsing(fn ($record) => $record->encrypted ? 'Yes' : 'No')
-                ->sortable(),
-        ])
-        ->filters([
-            SelectFilter::make('status')
-                ->label('Filter by Status')
-                ->options([
-                    'pending' => 'Pending',
-                    'approved' => 'Approved',
-                    'rejected' => 'Rejected',
-                ]),
-        ])
+                TextColumn::make('uploader.name')
+                    ->label('Uploaded By')
+                    ->sortable(),
+            ])
+            ->filters([
+                SelectFilter::make('status')
+                    ->label('Filter by Status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                    ]),
+            ])
             ->actions([
                 Actions\ViewAction::make(),
 
-                // Edit and delete actions visible only for Admins and CEOs
                 Actions\EditAction::make()
                     ->visible(fn () => Auth::user()?->hasAnyRole(['Admin', 'CEO'])),
+
                 Actions\DeleteAction::make()
                     ->visible(fn () => Auth::user()?->hasAnyRole(['Admin', 'CEO'])),
-                
-                // Approval actions visible only for Admins and CEOs
+
                 Actions\Action::make('approve')
                     ->label('Approve')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->visible(fn (Document $record) => $record->status === 'pending' && Auth::user()?->hasAnyRole(['Admin', 'CEO']))
                     ->requiresConfirmation()
-                    ->action(fn (Document $record) => $record->update(['status' => 'approved'])),
+                    ->action(function (Document $record) {
+                        $record->update([
+                            'status' => 'approved',
+                            'approved_by' => Auth::id(),
+                        ]);
+                    }),
 
                 Actions\Action::make('reject')
                     ->label('Reject')
@@ -97,7 +100,12 @@ class DocumentResource extends Resource
                     ->icon('heroicon-o-x-circle')
                     ->visible(fn (Document $record) => $record->status === 'pending' && Auth::user()?->hasAnyRole(['Admin', 'CEO']))
                     ->requiresConfirmation()
-                    ->action(fn (Document $record) => $record->update(['status' => 'rejected'])),
+                    ->action(function (Document $record) {
+                        $record->update([
+                            'status' => 'rejected',
+                            'approved_by' => Auth::id(),
+                        ]);
+                    }),
             ]);
     }
 
@@ -106,6 +114,7 @@ class DocumentResource extends Resource
         return [];
     }
 
+    // Define routes for pages related to the Document resource
     public static function getPages(): array
     {
         return [
@@ -116,4 +125,3 @@ class DocumentResource extends Resource
         ];
     }
 }
-

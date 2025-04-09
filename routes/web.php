@@ -5,11 +5,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Document;
+use Filament\Facades\Filament;
+use App\Filament\Resources\DocumentResource\Pages\ViewDocument;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
+// Custom Route for Document Download
 Route::get('/download/document/{id}', function ($id) {
     $document = Document::findOrFail($id);
 
@@ -37,16 +36,19 @@ Route::get('/download/document/{id}', function ($id) {
     return Storage::download($document->file_path);
 })->name('download.document');
 
+// Custom Route for Testing Role-Based Access
+Route::get('/test-role', function () {
+    $user = Auth::user();
 
-    Route::get('/test-role', function () {
-        $user = Auth::user();
-    
-        if ($user && $user->hasRole('Admin')) {
-            return 'You are Admin';
-        }
-    
-        return 'You are not Admin';
-    });
+    if ($user && $user->hasRole('Admin')) {
+        return 'You are Admin';
+    }
 
+    return 'You are not Admin';
+});
 
-Route::get('/documents/{id}/download', [SecureDownloadController::class, 'show'])->name('download.document');
+// Route for Viewing Document (Filament Resource Page)
+Route::get('/documents/{document}/view', ViewDocument::class)->name('documents.view');
+
+// Filament Resources and Routes will be automatically registered via the Filament Service Provider
+

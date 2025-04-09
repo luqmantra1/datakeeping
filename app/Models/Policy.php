@@ -4,45 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class Policy extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-    'quotation_id', 'policy_number', 'start_date', 'end_date', 'notes', 'file_path', 'status',
-];
-
+        'action', 'quotation_id', 'user_id', 'model_type', 'description',
+    ];
 
     /**
-     * Generate a unique policy number based on current timestamp and random string.
-     *
-     * @return string
+     * The user who performed the action.
      */
-    public static function generatePolicyNumber(): string
+    public function user()
     {
-        // Use current year and month + random string to generate a unique number
-        return 'POL' . now()->format('YmdHis') . Str::random(4); // Example: POL202504081234ABCD
+        return $this->belongsTo(User::class);
     }
 
     /**
-     * Automatically generate policy number before creating a new policy.
-     */
-    protected static function booted()
-    {
-        static::creating(function ($policy) {
-            // Set the policy number if it's not provided
-            if (empty($policy->policy_number)) {
-                $policy->policy_number = self::generatePolicyNumber();
-            }
-        });
-    }
-
-    /**
-     * Define the relationship between Policy and Quotation.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * The quotation this audit log is associated with.
      */
     public function quotation()
     {
@@ -51,8 +31,23 @@ class Policy extends Model
 
     public function updateStatus($newStatus)
 {
-    $this->status = $newStatus;
-    $this->save();
+    // Only update if the status changes
+    if ($this->status != $newStatus) {
+        $this->status = $newStatus;
+        $this->save();
+    }
+}
+protected static function boot()
+{
+    parent::boot();
+
+    static::creating(function ($policy) {
+        if (empty($policy->policy_number)) {
+            $policy->policy_number = 'PO' . strtoupper(uniqid()); // You can change this to your own logic
+        }
+    });
 }
 
+
 }
+

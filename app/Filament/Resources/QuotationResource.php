@@ -17,7 +17,7 @@ use Carbon\Carbon;
 class QuotationResource extends Resource
 {
     protected static ?string $model = Quotation::class;
-    protected static ?string $navigationGroup = 'Sepakat Insurance Workflow';
+    protected static ?string $navigationGroup = 'Internal';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     public static function form(Form $form): Form
@@ -93,113 +93,109 @@ class QuotationResource extends Resource
                         'generated' => 'Generated',
                     ])
                     ->disabled(fn ($record) => $record?->acceptance_status !== 'accepted')
-
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-        ->columns([
-            Tables\Columns\TextColumn::make('proposal.proposal_title')->label('Proposal'),
-            Tables\Columns\TextColumn::make('insurance_company'),
-            Tables\Columns\TextColumn::make('quotation_number'),
-            Tables\Columns\TextColumn::make('amount')->money('myr'),
-            Tables\Columns\BadgeColumn::make('status'),
-            Tables\Columns\BadgeColumn::make('acceptance_status')
-                ->label('Acceptance Status')
-                ->colors([
-                    'primary' => 'pending',
-                    'success' => 'accepted',
-                    'danger' => 'rejected',
-                ])
-                ->formatStateUsing(fn ($state) => $state ?? 'pending'),
-            Tables\Columns\BadgeColumn::make('policy_status')
-                ->label('Policy Status')
-                ->colors([
-                    'primary' => 'pending',
-                    'success' => 'generated',
-                ])
-                ->formatStateUsing(fn ($state) => $state ?? 'pending'),
-            Tables\Columns\TextColumn::make('created_at')->dateTime(),
-
-            Tables\Columns\TextColumn::make('policies.policy_number')
-    ->label('Generated Policy')
-    ->searchable()
-    ->sortable(),
-
-        ])
-
+            ->columns([
+                Tables\Columns\TextColumn::make('proposal.proposal_title')->label('Proposal'),
+                Tables\Columns\TextColumn::make('insurance_company'),
+                Tables\Columns\TextColumn::make('quotation_number'),
+                Tables\Columns\TextColumn::make('amount')->money('myr'),
+                Tables\Columns\BadgeColumn::make('status'),
+                Tables\Columns\BadgeColumn::make('acceptance_status')
+                    ->label('Acceptance Status')
+                    ->colors([
+                        'primary' => 'pending',
+                        'success' => 'accepted',
+                        'danger' => 'rejected',
+                    ])
+                    ->formatStateUsing(fn ($state) => $state ?? 'pending'),
+                Tables\Columns\BadgeColumn::make('policy_status')
+                    ->label('Policy Status')
+                    ->colors([
+                        'primary' => 'pending',
+                        'success' => 'generated',
+                    ])
+                    ->formatStateUsing(fn ($state) => $state ?? 'pending'),
+                Tables\Columns\TextColumn::make('created_at')->dateTime(),
+                Tables\Columns\TextColumn::make('policies.policy_number')
+                    ->label('Generated Policy')
+                    ->searchable()
+                    ->sortable(),
+            ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\Action::make('accept')
-                                    ->label('Accept Quotation')
-                                    ->action(function ($record) {
-                                        // Log when the action is triggered
-                                        Log::info("Accepting quotation: {$record->quotation_number}");
+                    ->label('Accept Quotation')
+                    ->action(function ($record) {
+                        // Log when the action is triggered
+                        Log::info("Accepting quotation: {$record->quotation_number}");
 
-                                        // Update the quotation status to accepted
-                                        $record->update([
-                                            'acceptance_status' => 'accepted',
-                                            'policy_status' => 'pending',
-                                        ]);
+                        // Update the quotation status to accepted
+                        $record->update([
+                            'acceptance_status' => 'accepted',
+                            'policy_status' => 'pending',
+                        ]);
 
-                                        // Log the updated record
-                                        Log::info("Updated Quotation: {$record->quotation_number} status changed to accepted.");
-                                    })
-                                    ->requiresConfirmation()
-                                    ->color('success')
-                                    ->icon('heroicon-o-check'),
+                        // Log the updated record
+                        Log::info("Updated Quotation: {$record->quotation_number} status changed to accepted.");
+                    })
+                    ->requiresConfirmation()
+                    ->color('success')
+                    ->icon('heroicon-o-check'),
 
                 Tables\Actions\Action::make('reject')
-                                    ->label('Reject Quotation')
-                                    ->action(function ($record) {
-                                        // Log when the action is triggered
-                                        Log::info("Rejecting quotation: {$record->quotation_number}");
+                    ->label('Reject Quotation')
+                    ->action(function ($record) {
+                        // Log when the action is triggered
+                        Log::info("Rejecting quotation: {$record->quotation_number}");
 
-                                        // Update the quotation status to rejected
-                                        $record->update([
-                                            'acceptance_status' => 'rejected',
-                                            'policy_status' => 'pending',
-                                        ]);
+                        // Update the quotation status to rejected
+                        $record->update([
+                            'acceptance_status' => 'rejected',
+                            'policy_status' => 'pending',
+                        ]);
 
-                                        // Log the updated record
-                                        Log::info("Updated Quotation: {$record->quotation_number} status changed to rejected.");
-                                    })
-                                    ->requiresConfirmation()
-                                    ->color('danger')
-                                    ->icon('heroicon-o-x-mark'),
-
+                        // Log the updated record
+                        Log::info("Updated Quotation: {$record->quotation_number} status changed to rejected.");
+                    })
+                    ->requiresConfirmation()
+                    ->color('danger')
+                    ->icon('heroicon-o-x-mark'),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
+            ])
+            ->actions([
+                Tables\Actions\Action::make('generate-policy')
+                    ->label('Generate Policy')
+                    ->action(function ($record) {
+                        // Log when the action is triggered
+                        Log::info("Generating policy for quotation: {$record->quotation_number}");
+
+                        // Generate a unique policy number (e.g., "POL-123456")
+                        $policyNumber = 'POL-' . rand(100000, 999999);
+
+                        // Create the policy
+                        $policy = Policy::create([
+                            'quotation_id' => $record->id,
+                            'policy_number' => $policyNumber,
+                            'start_date' => Carbon::now(),  // Today's date
+                            'end_date' => Carbon::now()->addYear(),  // Add 1 year
+                            'notes' => 'Policy generated from quotation ' . $record->quotation_number,
+                            'file_path' => null,  // You can set this if there's a policy PDF
+                        ]);
+
+                        // Log the created policy
+                        Log::info("Policy created: {$policy->policy_number} for quotation: {$record->quotation_number}");
+                    })
+                    ->color('success')
+                    ->icon('heroicon-o-check'),
             ]);
-
-            Tables\Actions\Action::make('generate-policy')
-    ->label('Generate Policy')
-    ->action(function ($record) {
-        // Log when the action is triggered
-        Log::info("Generating policy for quotation: {$record->quotation_number}");
-
-        // Generate a unique policy number (e.g., "POL-123456")
-        $policyNumber = 'POL-' . rand(100000, 999999);
-
-        // Create the policy
-        $policy = Policy::create([
-            'quotation_id' => $record->id,
-            'policy_number' => $policyNumber,
-            'start_date' => Carbon::now(),  // Today's date
-            'end_date' => Carbon::now()->addYear(),  // Add 1 year
-            'notes' => 'Policy generated from quotation ' . $record->quotation_number,
-            'file_path' => null,  // You can set this if there's a policy PDF
-        ]);
-
-        // Log the created policy
-        Log::info("Policy created: {$policy->policy_number} for quotation: {$record->quotation_number}");
-    })
-    ->color('success')
-    ->icon('heroicon-o-check');
     }
 
     public static function getPages(): array
